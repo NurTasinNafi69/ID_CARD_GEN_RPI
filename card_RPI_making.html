@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ID Card Generator RPI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'SolaimanLipi';
+        }
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 40px;
+            max-width: 1200px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        /* Input Form Styles */
+        .form-area {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 350px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .form-area h3 {
+            margin: 15px 0 10px 0;
+            border-bottom: 2px solid #03129c;
+            padding-bottom: 5px;
+            color: #333;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        /* --- Preview Area --- */
+        .preview-area {
+            display: flex;
+            flex-direction: row;
+            gap: 25px;
+        }
+
+        /* --- STANDARD CR-80 ID CARD SIZE --- */
+        .id-card {
+            width: 319px;
+            height: 506px; 
+            background: white;
+            border: 1px solid #aaa;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* ==================== FRONT SIDE ==================== */
+        .header {
+            background-color: #03129c;
+            color: white;
+            padding: 8px 5px;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;    
+            justify-content: center; 
+            text-align: center;
+        }
+        .logo-container {
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 3px;
+        }
+        .logo {
+            max-width: 43px;
+            object-fit: contain;
+        }
+        .inst-name {
+            font-size: 14px; 
+            font-weight: bold;
+            letter-spacing: 0.3px;
+            margin: 0;
+            width: 100%;
+        }
+        .location {
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 1px;
+            width: 100%;
+        }
+        .sidebar-red {
+            position: absolute;
+            left: 0;
+            top: 100px;
+            bottom: 0;
+            width: 45px;
+            background-color: #ff0000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .vertical-text {
+            transform: rotate(-90deg);
+            white-space: nowrap;
+            color: rgb(255, 255, 255);
+            font-size: 21px; 
+            font-weight: bold;
+            letter-spacing: 1px;
+            display: flex;
+        }
+        .main-content {
+            margin-left: 45px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: calc(100% - 100px); 
+            justify-content: space-between; 
+            padding-bottom: 20px; 
+        }
+        .content-top {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .id-title-box {
+            background: #ff0000;
+            color: white;
+            padding: 1px 20px;
+            border-radius:10px;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+        .student-photo {
+            width: 100px;
+            height: 120px;
+            border: 1px solid #03129c;
+            margin-top: 8px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+        .student-name {
+            color: #2e7d32;
+            font-size: 18px; 
+            font-weight: bold;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            text-align: center;
+            width: 100%;
+            text-transform: uppercase;
+        }
+        .info-table {
+            width: 95%;
+            font-size: 14.5px; 
+            font-weight: bold;
+            border-collapse: collapse;
+            color: #000;
+        }
+        .info-table td {
+            padding: 2.5px 2px;
+            vertical-align: top;
+        }
+        .info-table td:first-child {
+            width: 70px;
+        }
+        .info-table td:nth-child(2) {
+            width: 10px;
+        }
+        .content-bottom {
+            width: 100%;
+            display: flex;
+            justify-content: space-between; 
+            align-items: flex-end; 
+            margin-top: auto; 
+            position: relative;
+        }
+        .shift-badge {
+            color: white;
+            padding: 5px 16px; 
+            font-size: 17px;    
+            font-weight: bold;
+            border-radius: 4px;
+            transform: rotate(-30deg);
+            z-index: 10;
+            position: absolute;
+            bottom: 50px;       
+            left: 15px;         
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+        .signature-area {
+            text-align: center;
+            width: 140px;
+            margin-left: auto;
+        }
+        .sig-container {
+            height: 25px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-bottom: 2px;
+        }
+        .sig-img {
+            max-width: 100px;
+            object-fit: contain;
+        }
+        .sig-text {
+            font-size: 15px; 
+            font-weight: bold;
+            border-top: 1px solid #000;
+            padding-top: 1px;
+            color: #000;
+        }
+
+        /* ==================== BACK SIDE ==================== */
+        .back-watermark-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .watermark-img {
+            width: 250px; 
+            height: 250px; 
+            object-fit: contain;
+            opacity: 0.08; 
+            display: none;
+        }
+        .back-content-wrapper {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            width: 100%;
+        }
+        .back-top-bar-color {
+            background: #ff0000;
+            height: 15px;
+    
+        }
+        .back-top-bar {
+            background: #2e7d32;
+            color: white;
+            text-align: center;
+            padding: 6px;
+            font-size: 14px; 
+            font-weight: bold;
+            border-radius: 10px;
+            margin: 10px;
+        }
+        .personal-info-heading {
+            background: #ff0000;
+            color: white;
+            width: fit-content;
+            padding: 3px 15px;
+            font-size: 13px; 
+            font-weight: bold;
+            border-radius: 10px;
+            margin: 12px auto;
+        }
+        .back-info-table {
+            width: 90%;
+            margin: 0 auto;
+            font-size: 14px; 
+            font-weight: bold;
+            border-collapse: collapse;
+            color: #000;
+        }
+        .back-info-table td {
+            padding: 5px 2px;
+            vertical-align: top;
+        }
+        .back-info-table td:first-child {
+            width: 110px; 
+        }
+        .back-info-table td:nth-child(2) {
+            width: 10px;
+        }
+        .blood-group-val {
+            color: #ff0000;
+        }
+        .return-box {
+            background: #4b0082;
+            color: white;
+            text-align: center;
+            font-size: 14px; 
+            font-weight: bold;
+            padding: 5px;
+            width: 85%;
+            margin: 12px auto 6px auto;
+            border-radius: 6px;
+        }
+        .inst-address {
+            text-align: center;
+            font-size: 13px; 
+            line-height: 1.3;
+            color: #000;
+            font-weight: bold;
+        }
+        .inst-address span {
+            color: #ff0000;
+            font-weight: bold;
+        }
+        .qr-area {
+            width: 75px;
+            height: 75px;
+            border: 1px solid #000;
+            margin: 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+        }
+        .qr-area img {
+            width: 90%;
+            height: 90%;
+            object-fit: contain;
+        }
+        .back-footer {
+            text-align: center;
+            font-size: 13px; /* ফোন ও ওয়েবসাইটের ফন্ট বড় করা হয়েছে */
+            font-weight: bold;
+            color: #000;
+            line-height: 1.3;
+        }
+        .expiry-bar {
+            background: #ff0000;
+            color: white;
+            text-align: center;
+            padding: 6px;
+            font-size: 14px; /* বড় করা হয়েছে */
+            font-weight: bold;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <h2 style="margin-bottom: 20px; color: #333;">রংপুর সরকারি পলিটেকনিক আইডি কার্ড জেনারেটর</h2>
+
+    <div class="container">
+        <div class="form-area">
+            <h3>ফ্রন্ট সাইড ডেটা</h3>
+            <div class="form-group">
+                <label>শিক্ষার্থীদের নাম (Capital):</label>
+                <input type="text" id="inputName" value="" oninput="updateCard()">
+            </div>
+            <div class="form-group">
+                <label>টেকনোলজি:</label>
+                <select id="inputTech" onchange="updateCard()">
+                    <option value="Your Technology" selected >Select Technology</option>
+                    <option value="Civil Technology">Civil Technology</option>
+                    <option value="Computer Science & Technology">Computer Science & Technology</option>
+                    <option value="Electrical Technology">Electrical Technology</option>
+                    <option value="Mechanical Technology">Mechanical Technology</option>
+                    <option value="Power Technology">Power Technology</option>
+                    <option value="Electronics Technology">Electronics Technology</option>
+                    <option value="Electromedical Technology">Electromedical Technology</option>
+                </select>   
+            </div>
+            <div class="form-group">
+                <label>রোল নং:</label>
+                <input type="text" id="inputRoll" value="" oninput="updateCard()">
+            </div>
+            <div class="form-group">
+                <label>রেজিস্ট্রেশন নং:</label>
+                <input type="text" id="inputReg" value="" oninput="updateCard()">
+            </div>
+            <div class="form-group">
+                <label>সেশন:</label>
+                <input type="text" id="inputSession" value="" oninput="updateCard()">
+            </div>
+            <div class="form-group">
+                <label>শিফট:</label>
+                <select id="inputShift" onchange="updateCard()">
+                    <option value="Your Shift" selected>Selected Shift</option>
+                    <option value="1st Shift">1st Shift</option>
+                    <option value="2nd Shift">2nd Shift</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>শিক্ষার্থীর ছবি:</label>
+                <input type="file" id="inputPhoto" accept="image/*" onchange="loadPhoto(event)">
+            </div>
+            <h3>ব্যাক সাইড ডেটা</h3>
+            <div class="form-group">
+                <label>পিতার নাম:</label>
+                <input type="text" id="inputFather" value="" oninput="updateCard()">
+            </div>
+            <div class="form-group">
+                <label>মাতার নাম:</label>
+                <input type="text" id="inputMother" value="" oninput="updateCard()">
+            </div>
+            <div class="form-group">
+                <label>যোগাযোগ নং:</label>
+                <input type="text" id="inputContact" value="" oninput="updateCard()">
+            </div>
+            <div class="form-group">
+                <label>রক্তের গ্রুপ:</label>
+                <select id="inputBlood" onchange="updateCard()">
+                    <option value="" selected>Selected Blood Group</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                </select>
+            </div>
+
+            <button onclick="downloadBothSides()">ডাউনলোড আইডি কার্ড</button>
+        </div>
+
+        <div class="preview-area">
+            
+            <div class="id-card" id="frontCard">
+                <div class="header">
+                    <div class="logo-container">
+                        <img class="logo" id="cardLogo" src="RPI_LOGO.png" alt="Logo">
+                    </div>
+                    <div class="inst-name">RANGPUR GOVT. POLYTECHNIC INSTITUTE</div>
+                    <div class="location">RANGPUR</div>
+                </div>
+                
+                <div class="sidebar-red">
+                    <div class="vertical-text" id="cardTech">Your Technology</div>
+                </div>
+
+                <div class="main-content">
+                    <div class="content-top">
+                        <div class="id-title-box">STUDENT ID CARD</div>
+                        <img class="student-photo" id="cardPhoto" src="https://via.placeholder.com/110x130?text=Photo" alt="Student Photo">
+                        <div class="student-name" id="cardName"></div>
+                        
+                        <table class="info-table">
+                            <tr>
+                                <td>Roll No</td>
+                                <td>:</td>
+                                <td id="cardRoll"></td>
+                            </tr>
+                            <tr>
+                                <td>Reg. No</td>
+                                <td>:</td>
+                                <td id="cardReg"></td>
+                            </tr>
+                            <tr>
+                                <td>Session</td>
+                                <td>:</td>
+                                <td id="cardSession"></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="content-bottom">
+                        <div class="shift-badge" id="cardShift" style="background-color: #2e7d32;">1st Shift</div>
+
+                        <div class="signature-area">
+                            <div class="sig-container">
+                                <img class="sig-img" id="cardSig" src="sig.jpg" alt="Signature">
+                            </div>
+                            <div class="sig-text">Principal Signature</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="id-card" id="backCard">
+                <div class="back-watermark-container">
+                    <img class="watermark-img" id="cardWatermark" src="" alt="Watermark">
+                </div>
+
+                <div class="back-content-wrapper">
+                    <div class="back-top-bar-color"></div>
+                    <div class="back-top-bar">This card is not transferable</div>
+                    <div class="personal-info-heading">Personal Information</div>
+                    
+                    <table class="back-info-table">
+                        <tr>
+                            <td>Father's Name</td>
+                            <td>:</td>
+                            <td id="cardFather"></td>
+                        </tr>
+                        <tr>
+                            <td>Mother's Name</td>
+                            <td>:</td>
+                            <td id="cardMother"></td>
+                        </tr>
+                        <tr>
+                            <td>Contact No</td>
+                            <td>:</td>
+                            <td id="cardContact"></td>
+                        </tr>
+                        <tr>
+                            <td>Blood Group</td>
+                            <td>:</td>
+                            <td id="cardBlood" class="blood-group-val"></td>
+                        </tr>
+                    </table>
+
+                    <div class="return-box">If Found Please Return to</div>
+                    <div class="inst-address">
+                        <span>Principal</span><br>
+                        Rangpur Govt. Polytechnic Institute<br>
+                        Jummapara, Rangpur-5400.
+                    </div>
+
+                    <div class="qr-area">
+                        <img id="cardQR" src="" alt="QR Code">
+                    </div>
+
+                    <div class="back-footer">
+                        📞 02588809188<br>
+                        🌐 www.rangpur.polytech.gov.bd
+                    </div>
+
+                    <div class="expiry-bar">Valid up to Reg. Duration</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            updateCard();
+        };
+
+        function updateCard() {
+            const name = document.getElementById('inputName').value;
+            const tech = document.getElementById('inputTech').value;
+            const techsize = document.getElementById('cardTech'); 
+
+            if (tech.length > 20) {
+                techsize.style.fontSize = '25px'; 
+            } else if (tech.length > 16) {
+                techsize.style.fontSize = '24px'; 
+            } else {
+                techsize.style.fontSize = '30px'; 
+            }
+
+
+            const roll = document.getElementById('inputRoll').value;
+            const reg = document.getElementById('inputReg').value;
+            const session = document.getElementById('inputSession').value;
+
+            document.getElementById('cardName').innerText = name;
+            document.getElementById('cardTech').innerText = tech;
+            document.getElementById('cardRoll').innerText = roll;
+            document.getElementById('cardReg').innerText = reg;
+            document.getElementById('cardSession').innerText = session;
+            
+            const shiftValue = document.getElementById('inputShift').value;
+            const shiftBadge = document.getElementById('cardShift');
+            shiftBadge.innerText = shiftValue;
+
+            if (shiftValue === "2nd Shift") {
+                shiftBadge.style.backgroundColor = "#03129c"; 
+            } else {
+                shiftBadge.style.backgroundColor = "#2e7d32"; 
+            }
+
+            document.getElementById('cardFather').innerText = document.getElementById('inputFather').value;
+            document.getElementById('cardMother').innerText = document.getElementById('inputMother').value;
+            document.getElementById('cardContact').innerText = document.getElementById('inputContact').value;
+            document.getElementById('cardBlood').innerText = document.getElementById('inputBlood').value;
+
+            const qrRawData = `Name: ${name}\nRoll: ${roll}\nReg: ${reg}\nSession: ${session}\nTech: ${tech}`;
+            const encodedData = encodeURIComponent(qrRawData);
+            document.getElementById('cardQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodedData}`;
+        }
+
+        function loadLogo(event) {
+            const reader = new FileReader();
+            reader.onload = function(){
+                const logoOutput = document.getElementById('cardLogo');
+                logoOutput.src = reader.result;
+                logoOutput.style.display = 'block'; 
+
+                const watermarkOutput = document.getElementById('cardWatermark');
+                watermarkOutput.src = reader.result;
+                watermarkOutput.style.display = 'block';
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function loadPhoto(event) {
+            const reader = new FileReader();
+            reader.onload = function(){
+                const output = document.getElementById('cardPhoto');
+                output.src = reader.result;
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function loadSignature(event) {
+            const reader = new FileReader();
+            reader.onload = function(){
+                const output = document.getElementById('cardSig');
+                output.src = reader.result;
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function downloadBothSides() {
+            const roll = document.getElementById('inputRoll').value || 'student';
+            
+            const front = document.getElementById('frontCard');
+            html2canvas(front, { scale: 3, useCORS: true }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = roll + '_Front_Card.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+
+            setTimeout(() => {
+                const back = document.getElementById('backCard');
+                html2canvas(back, { scale: 3, useCORS: true }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = roll + '_Back_Card.png';
+                    link.href = canvas.toDataURL();
+                    link.click();
+                });
+            }, 500);
+        }
+    </script>
+</body>
+</html>
